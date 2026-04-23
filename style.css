@@ -1,0 +1,11 @@
+.square-highlight {
+    background-color: yellow !important;
+}
+
+#status {
+    font-weight: bold;
+}
+
+#moves {
+    font-size: 14px;
+}
