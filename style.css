@@ -1,0 +1,46 @@
+body{
+    margin:0;
+    background:#222;
+    color:white;
+    font-family:Arial;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+h1{
+    margin-bottom:20px;
+}
+
+.board{
+    width:480px;
+    height:480px;
+    display:grid;
+    grid-template-columns:repeat(8,1fr);
+    border:5px solid white;
+}
+
+.square{
+    width:60px;
+    height:60px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:40px;
+    cursor:pointer;
+    user-select:none;
+}
+
+.white{
+    background:#f0d9b5;
+}
+
+.black{
+    background:#b58863;
+}
+
+.selected{
+    outline:4px solid yellow;
+}
