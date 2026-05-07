@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chess Game</title>
+
+<style>
+body{
+    margin:0;
+    background:#1e1e1e;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    height:100vh;
+    font-family:Arial;
+    color:white;
+}
+
+h1{
+    margin-bottom:10px;
+}
+
+#board{
+    width:480px;
+    height:480px;
+    display:grid;
+    grid-template-columns:repeat(8,1fr);
+    border:5px solid white;
+}
+
+.square{
+    width:60px;
+    height:60px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:42px;
+    cursor:pointer;
+    user-select:none;
+}
+
+.white{
+    background:#f0d9b5;
+}
+
+.black{
+    background:#b58863;
+}
+
+.selected{
+    outline:4px solid yellow;
+}
+
+#status{
+    margin-top:15px;
+    font-size:22px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>♟ Chess Game</h1>
+
+<div id="board"></div>
+
+<div id="status">Turn: White</div>
+
+<script>
+const board = document.getElementById("board");
+const statusText = document.getElementById("status");
+
+const pieces = {
+    r:"♜", n:"♞", b:"♝", q:"♛", k:"♚", p:"♟",
+    R:"♖", N:"♘", B:"♗", Q:"♕", K:"♔", P:"♙"
+};
+
+let turn = "white";
+let selected = null;
+
+let game = [
+["r","n","b","q","k","b","n","r"],
+["p","p","p","p","p","p","p","p"],
+["","","","","","","",""],
+["","","","","","","",""],
+["","","","","","","",""],
+["","","","","","","",""],
+["P","P","P","P","P","P","P","P"],
+["R","N","B","Q","K","B","N","R"]
+];
+
+function drawBoard(){
+
+    board.innerHTML = "";
+
+    for(let row=0; row<8; row++){
+
+        for(let col=0; col<8; col++){
+
+            const square = document.createElement("div");
+
+            square.classList.add("square");
+
+            if((row+col)%2===0){
+                square.classList.add("white");
+            }else{
+                square.classList.add("black");
+            }
+
+            square.dataset.row = row;
+            square.dataset.col = col;
+
+            const piece = game[row][col];
+
+            if(piece){
+                square.textContent = pieces[piece];
+            }
+
+            if(
+                selected &&
+                selected.row===row &&
+                selected.col===col
+            ){
+                square.classList.add("selected");
+            }
+
+            square.addEventListener("click", handleClick);
+
+            board.appendChild(square);
+        }
+    }
+}
+
+function isWhite(piece){
+    return piece === piece.toUpperCase();
+}
+
+function handleClick(){
+
+    const row = parseInt(this.dataset.row);
+    const col = parseInt(this.dataset.col);
+
+    const clickedPiece = game[row][col];
+
+    if(selected){
+
+        const fromRow = selected.row;
+        const fromCol = selected.col;
+
+        const movingPiece = game[fromRow][fromCol];
+
+        if(validMove(movingPiece,fromRow,fromCol,row,col)){
+
+            const backup = game[row][col];
+
+            game[row][col] = movingPiece;
+            game[fromRow][fromCol] = "";
+
+            if(isKingInCheck(turn)){
+
+                game[fromRow][fromCol] = movingPiece;
+                game[row][col] = backup;
+
+                alert("Illegal Move! King in check.");
+
+            }else{
+
+                turn = turn==="white" ? "black":"white";
+
+                if(isKingInCheck(turn)){
+
+                    statusText.textContent =
+                    "CHECK! " +
+                    capitalize(turn);
+
+                }else{
+
+                    statusText.textContent =
+                    "Turn: " +
+                    capitalize(turn);
+                }
+            }
+        }
+
+        selected = null;
+        drawBoard();
+
+    }else{
+
+        if(clickedPiece){
+
+            if(turn==="white" && isWhite(clickedPiece)){
+                selected = {row,col};
+            }
+
+            if(turn==="black" && !isWhite(clickedPiece)){
+                selected = {row,col};
+            }
+
+            drawBoard();
+        }
+    }
+}
+
+function capitalize(text){
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function validMove(piece,fromRow,fromCol,toRow,toCol){
+
+    if(fromRow===toRow && fromCol===toCol){
+        return false;
+    }
+
+    const target = game[toRow][toCol];
+
+    if(target){
+
+        if(isWhite(piece)===isWhite(target)){
+            return false;
+        }
+    }
+
+    const dr = toRow - fromRow;
+    const dc = toCol - fromCol;
+
+    switch(piece.toLowerCase()){
+
+        case "p":
+
+            const dir = isWhite(piece) ? -1 : 1;
+
+            if(dc===0 && !target){
+
+                if(dr===dir){
+                    return true;
+                }
+
+                if(
+                    ((fromRow===6 && dir===-1) ||
+                    (fromRow===1 && dir===1))
+                    &&
+                    dr===dir*2
+                ){
+
+                    if(game[fromRow+dir][fromCol]===""){
+                        return true;
+                    }
+                }
+            }
+
+            if(
+                Math.abs(dc)===1 &&
+                dr===dir &&
+                target
+            ){
+                return true;
+            }
+
+            break;
+
+        case "r":
+
+            if(dr===0 || dc===0){
+                return clearPath(fromRow,fromCol,toRow,toCol);
+            }
+
+            break;
+
+        case "b":
+
+            if(Math.abs(dr)===Math.abs(dc)){
+                return clearPath(fromRow,fromCol,toRow,toCol);
+            }
+
+            break;
+
+        case "q":
+
+            if(
+                dr===0 ||
+                dc===0 ||
+                Math.abs(dr)===Math.abs(dc)
+            ){
+                return clearPath(fromRow,fromCol,toRow,toCol);
+            }
+
+            break;
+
+        case "n":
+
+            if(
+                (Math.abs(dr)===2 && Math.abs(dc)===1) ||
+                (Math.abs(dr)===1 && Math.abs(dc)===2)
+            ){
+                return true;
+            }
+
+            break;
+
+        case "k":
+
+            if(
+                Math.abs(dr)<=1 &&
+                Math.abs(dc)<=1
+            ){
+                return true;
+            }
+
+            break;
+    }
+
+    return false;
+}
+
+function clearPath(fr,fc,tr,tc){
+
+    const dr = Math.sign(tr-fr);
+    const dc = Math.sign(tc-fc);
+
+    let r = fr + dr;
+    let c = fc + dc;
+
+    while(r!==tr || c!==tc){
+
+        if(game[r][c] !== ""){
+            return false;
+        }
+
+        r += dr;
+        c += dc;
+    }
+
+    return true;
+}
+
+function findKing(color){
+
+    const king = color==="white" ? "K":"k";
+
+    for(let r=0; r<8; r++){
+
+        for(let c=0; c<8; c++){
+
+            if(game[r][c]===king){
+
+                return {r,c};
+            }
+        }
+    }
+}
+
+function isKingInCheck(color){
+
+    const kingPos = findKing(color);
+
+    for(let r=0; r<8; r++){
+
+        for(let c=0; c<8; c++){
+
+            const piece = game[r][c];
+
+            if(piece){
+
+                if(color==="white" && !isWhite(piece)){
+
+                    if(validMove(piece,r,c,kingPos.r,kingPos.c)){
+                        return true;
+                    }
+                }
+
+                if(color==="black" && isWhite(piece)){
+
+                    if(validMove(piece,r,c,kingPos.r,kingPos.c)){
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+drawBoard();
+</script>
+
+</body>
+</html>
