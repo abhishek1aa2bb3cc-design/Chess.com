@@ -1,9 +1,11 @@
-document.addEventListener("click", () => {
+const moveSound = new Audio(
+"https://www.soundjay.com/button/sounds/button-16.mp3"
+);
 
-    const audio = new Audio(
-    "https://www.soundjay.com/button/sounds/button-16.mp3"
-    );
+document.addEventListener("click", function () {
 
-    audio.play();
+    moveSound.currentTime = 0;
+
+    moveSound.play().catch(err => console.log(err));
 
 }, true);
